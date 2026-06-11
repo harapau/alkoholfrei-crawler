@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Alkoholfreie Weine</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+      #map {
+        height: 500px;
+      }
+      .wine-list {
+        margin: 20px 0;
+      }
+      .wine-item {
+        padding: 10px;
+        border: 1px solid #ddd;
+        margin: 5px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Alkoholfreie Weine in Deutschland</h1>
+
+    <!-- Filter-Formular -->
+    <form id="filter-form">
+      <label
+        >Alkoholgehalt:
+        <select name="alcohol">
+          <option value="">Alle</option>
+          <option value="0.0">0,0%</option>
+          <option value="0.5">0,5%</option>
+        </select>
+      </label>
+      <label
+        >Preis (max):
+        <input
+          type="number"
+          name="max_price"
+          step="0.01"
+          placeholder="z. B. 20.00"
+        />
+      </label>
+      <button type="submit">Filtern</button>
+    </form>
+
+    <!-- Wein-Liste -->
+    <div class="wine-list" id="wine-list">
+      <!-- Wird per JavaScript gefüllt -->
+    </div>
+
+    <!-- Karte -->
+    <div id="map"></div>
+
+    <script>
+      // Karte initialisieren
+      const map = L.map("map").setView([51.1657, 10.4515], 6); // Deutschland
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
+        map,
+      );
+
+      // Weine laden und anzeigen
+      async function loadWines(params = {}) {
+        const query = new URLSearchParams(params);
+        const response = await fetch(`/api/wines?${query}`);
+        const wines = await response.json();
+
+        // Liste aktualisieren
+        const wineList = document.getElementById("wine-list");
+        wineList.innerHTML = wines
+          .map(
+            (wine) => `
+                <div class="wine-item">
+                    <h3><a href="${wine.url}" target="_blank">${wine.name}</a></h3>
+                    <p>Winzer: ${wine.winery} | Preis: €${wine.price} | Alkohol: ${wine.alcohol_content}%</p>
+                </div>
+            `,
+          )
+          .join("");
+
+        // Marker auf der Karte setzen
+        wines.forEach((wine) => {
+          if (wine.latitude && wine.longitude) {
+            L.marker([wine.latitude, wine.longitude])
+              .addTo(map)
+              .bindPopup(`<b>${wine.name}</b><br>${wine.winery}`);
+          }
+        });
+      }
+
+      // Filter-Formular verarbeiten
+      document.getElementById("filter-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const params = Object.fromEntries(formData.entries());
+        loadWines(params);
+      });
+
+      // Initial laden
+      loadWines();
+    </script>
+  </body>
+</html>

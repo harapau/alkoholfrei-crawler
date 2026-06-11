@@ -15,3 +15,5 @@ class Config:
     # Crawler-Einstellungen
     RATE_LIMIT = 2  # Sekunden zwischen Anfragen pro Domain
     USER_AGENT = "AlkoholfreiCrawler/1.0 (+https://deine-plattform.de/bot-info)"
+
+    SQLALCHEMY_TRACK_MODIFICATIONS = True  # Für Flask-Migrate

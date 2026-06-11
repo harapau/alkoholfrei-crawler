@@ -1,8 +1,10 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from config import Config
 
 db = SQLAlchemy()
+migrate = Migrate()
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -10,6 +12,11 @@ def create_app(config_class=Config):
 
     # Initialisiere die Datenbank
     db.init_app(app)
+    migrate.init_app(app, db)
+
+    # Celery initialisieren
+    from app.tasks import celery, init_celery
+    init_celery(app)
 
     # Blueprints registrieren
     from app.routes.admin import bp as admin_bp
