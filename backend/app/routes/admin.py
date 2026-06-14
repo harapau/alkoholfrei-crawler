@@ -58,21 +58,3 @@ def list_wines():
         "url": wine.url,
         "is_active": wine.is_active,
     } for wine in wines])
-
-@bp.route('/database/clear', methods=['POST'])
-def clear_database():
-    """Lösche alle Weine aus der Datenbank."""
-    try:
-        from app.models.wine import Wine
-        from app import db
-        count = Wine.query.delete()
-        db.session.commit()
-        return jsonify({
-            "message": f"Datenbank geleert: {count} Wein(e) gelöscht.",
-        }), 200
-    except Exception as exc:
-        current_app.logger.exception('Fehler beim Löschen der Datenbank')
-        return jsonify({
-            "error": "Fehler beim Löschen der Datenbank.",
-            "detail": str(exc),
-        }), 500
