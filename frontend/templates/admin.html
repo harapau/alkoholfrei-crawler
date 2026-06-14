@@ -85,22 +85,33 @@
       </form>
 
       <div id="result" aria-live="polite"></div>
+
+      <hr style="margin-top: 30px; margin-bottom: 30px;" />
+
+      <h2>Verwaltung</h2>
+      <button id="delete-db-button" style="background-color: #d32f2f;">Datenbank löschen</button>
     </div>
 
     <script>
       const form = document.getElementById('crawl-form');
       const button = document.getElementById('crawl-button');
+      const urlInput = document.getElementById('crawl-url');
       const result = document.getElementById('result');
+      const deleteDbButton = document.getElementById('delete-db-button');
+
+      console.debug('Admin JS geladen', { form, button, urlInput, result, deleteDbButton });
 
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         result.innerHTML = '';
         button.disabled = true;
+        button.textContent = 'Starte Crawl…';
 
-        const url = document.getElementById('crawl-url').value.trim();
+        const url = urlInput.value.trim();
         if (!url) {
           showMessage('Bitte gib eine gültige URL ein.', 'error');
           button.disabled = false;
+          button.textContent = 'Crawl starten';
           return;
         }
 
@@ -112,17 +123,69 @@
             },
             body: JSON.stringify({ url }),
           });
+          const text = await response.text();
+          let data = null;
+          try {
+            data = JSON.parse(text);
+          } catch (parseError) {
+            console.warn('Antwort ist kein JSON:', parseError, text);
+          }
 
-          const data = await response.json();
           if (!response.ok) {
-            showMessage(data.error || 'Fehler beim Starten des Crawls.', 'error');
+            const message = data?.error || text || `Fehler beim Starten des Crawls (${response.status}).`;
+            const detail = data?.detail ? `\nDetail: ${data.detail}` : '';
+            showMessage(`${message}${detail}`, 'error');
           } else {
-            showMessage(`Crawl gestartet: ${data.message}`, 'success');
+            showMessage(`Crawl gestartet: ${data?.message || 'Task gestartet.'}`, 'success');
           }
         } catch (error) {
+          console.error('Fetch-Fehler:', error);
           showMessage('Netzwerkfehler beim Starten des Crawls.', 'error');
         } finally {
           button.disabled = false;
+          button.textContent = 'Crawl starten';
+        }
+      });
+
+      deleteDbButton.addEventListener('click', async (event) => {
+        event.preventDefault();
+        const confirmed = confirm('Wirklich alle Weine aus der Datenbank löschen? Diese Aktion kann nicht rückgängig gemacht werden!');
+        if (!confirmed) {
+          return;
+        }
+
+        result.innerHTML = '';
+        deleteDbButton.disabled = true;
+        deleteDbButton.textContent = 'Lösche Datenbank…';
+
+        try {
+          const response = await fetch('/admin/database/clear', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          const text = await response.text();
+          let data = null;
+          try {
+            data = JSON.parse(text);
+          } catch (parseError) {
+            console.warn('Antwort ist kein JSON:', parseError, text);
+          }
+
+          if (!response.ok) {
+            const message = data?.error || text || `Fehler beim Löschen (${response.status}).`;
+            const detail = data?.detail ? `\nDetail: ${data.detail}` : '';
+            showMessage(`${message}${detail}`, 'error');
+          } else {
+            showMessage(`✅ ${data?.message || 'Datenbank geleert.'}`, 'success');
+          }
+        } catch (error) {
+          console.error('Fetch-Fehler:', error);
+          showMessage('Netzwerkfehler beim Löschen der Datenbank.', 'error');
+        } finally {
+          deleteDbButton.disabled = false;
+          deleteDbButton.textContent = 'Datenbank löschen';
         }
       });
 

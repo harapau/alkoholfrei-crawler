@@ -17,16 +17,27 @@ class WinerySpider:
         self.domain = "/".join(base_url.split("/")[:3])
 
     def check_robots_txt(self):
-        """Prüfe, ob Crawling erlaubt ist."""
+        """Prüfe, ob Crawling erlaubt ist (robust via RobotFileParser)."""
         robots_url = urljoin(self.domain, "/robots.txt")
         try:
             response = self.session.get(robots_url, timeout=10)
-            if response.status_code == 200:
-                return "Disallow: /" not in response.text
-            return True  # Erlaube Crawling, falls robots.txt nicht existiert
-        except RequestException:
-            return True  # Im Zweifel erlauben (konservativ)
+            if response.status_code != 200:
+                # Keine robots.txt gefunden -> Crawlen erlauben
+                return True
+            from urllib.robotparser import RobotFileParser
 
+            rp = RobotFileParser()
+            # RobotFileParser.parse erwartet eine Liste von Zeilen
+            rp.parse(response.text.splitlines())
+            user_agent = self.session.headers.get("User-Agent", Config.USER_AGENT)
+            # Prüfe, ob der user agent die Basis-URL crawlen darf
+            return rp.can_fetch(user_agent, self.base_url)
+        except RequestException as e:
+            print(f"⚠️ robots.txt konnte nicht geladen werden: {e}")
+            return True  # Im Zweifel erlauben
+        except Exception as e:
+            print(f"⚠️ Fehler beim Parsen von robots.txt: {e}")
+            return True
     def fetch_page(self, url, max_retries=3):
         """Lade eine Seite mit Retry-Logik."""
         for attempt in range(max_retries):
