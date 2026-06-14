@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Admin - Crawl starten</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 0;
+        background: #f9f9f9;
+      }
+      .container {
+        max-width: 700px;
+        margin: 0 auto;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+      }
+      h1 {
+        margin-top: 0;
+      }
+      label {
+        display: block;
+        margin-bottom: 12px;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        padding: 10px 18px;
+        border: none;
+        border-radius: 4px;
+        background: #1976d2;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+      .message {
+        margin-top: 16px;
+        padding: 14px;
+        border-radius: 4px;
+      }
+      .message.success {
+        background: #e8f5e9;
+        border: 1px solid #c8e6c9;
+        color: #256029;
+      }
+      .message.error {
+        background: #ffebee;
+        border: 1px solid #ffcdd2;
+        color: #c62828;
+      }
+      .task-info {
+        margin-top: 0;
+        font-size: 0.95rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Admin: Crawl starten</h1>
+      <p>Gib hier die URL eines Winzer-Shops ein, den du crawlen möchtest.</p>
+
+      <form id="crawl-form">
+        <label for="crawl-url">Winzer-URL</label>
+        <input
+          id="crawl-url"
+          name="url"
+          type="text"
+          placeholder="https://www.example-winery.de/shop"
+          required
+        />
+        <button type="submit" id="crawl-button">Crawl starten</button>
+      </form>
+
+      <div id="result" aria-live="polite"></div>
+    </div>
+
+    <script>
+      const form = document.getElementById('crawl-form');
+      const button = document.getElementById('crawl-button');
+      const result = document.getElementById('result');
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        result.innerHTML = '';
+        button.disabled = true;
+
+        const url = document.getElementById('crawl-url').value.trim();
+        if (!url) {
+          showMessage('Bitte gib eine gültige URL ein.', 'error');
+          button.disabled = false;
+          return;
+        }
+
+        try {
+          const response = await fetch('/admin/crawl/start', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url }),
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            showMessage(data.error || 'Fehler beim Starten des Crawls.', 'error');
+          } else {
+            showMessage(`Crawl gestartet: ${data.message}`, 'success');
+          }
+        } catch (error) {
+          showMessage('Netzwerkfehler beim Starten des Crawls.', 'error');
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      function showMessage(text, type) {
+        result.innerHTML = `<div class="message ${type}"><p>${text}</p></div>`;
+      }
+    </script>
+  </body>
+</html>

@@ -1,7 +1,11 @@
-from flask import Blueprint, jsonify, request
-from app import create_app
+from flask import Blueprint, jsonify, request, render_template
 
 bp = Blueprint('admin', __name__)
+
+@bp.route('/', methods=['GET'])
+def admin_page():
+    """Gibt die Admin-Oberfläche zum Starten von Crawls zurück."""
+    return render_template('admin.html')
 
 @bp.route('/crawl/start', methods=['POST'])
 def start_crawl():
