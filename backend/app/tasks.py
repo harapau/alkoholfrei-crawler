@@ -7,6 +7,12 @@ celery = Celery(__name__)
 def init_celery(app):
     """Initialisiert Celery mit der Flask-App."""
     celery.conf.update(app.config)
+    # Unterstütze eine einfache Entwicklungs-Fallback-Option: "eager" Ausführung
+    # Setze in der .env/Config: CELERY_TASK_ALWAYS_EAGER=1 oder True
+    eager = app.config.get("CELERY_TASK_ALWAYS_EAGER", app.config.get("TASK_ALWAYS_EAGER", False))
+    if isinstance(eager, str):
+        eager = eager.lower() in ("1", "true", "yes")
+    celery.conf.task_always_eager = bool(eager)
     return celery
 
 # Task direkt registrieren (nicht in einer Funktion verstecken)

@@ -62,7 +62,7 @@ class WinerySpider:
         # Flexible Selektoren (Beispiel: Mehrere mögliche Klassen)
         name_selectors = ["h1.product-title", "h1", ".product-name"]
         price_selectors = [".price", ".product-price", "[itemprop=price]"]
-        alcohol_selectors = [".alcohol-content", ".alcohol", "[itemprop=alcohol]"]
+        alcohol_selectors = ["td:contains('Alk. Gehalt')", ".alcohol-content", ".alcohol", "[itemprop=alcohol]"]
 
         name = self._extract_text(soup, name_selectors)
         price = self._extract_price(soup, price_selectors)
